@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Kit Scraper — Detroit Axle</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<div class="noise"></div>
+<div class="grid-bg"></div>
+
+<div class="container">
+
+    <header>
+        <div class="header-top">
+            <div class="logo-mark">DA</div>
+            <div class="header-meta">
+                <span class="badge">v1.0.0</span>
+                <span class="badge badge-live"><span class="dot"></span>ready</span>
+            </div>
+        </div>
+        <h1>Kit Scraper</h1>
+        <p>Analyze Detroit Axle kit URLs — extract parts, pricing, and calculate return values instantly.</p>
+    </header>
+
+    <div class="form-section">
+        <label class="form-label">Kit URL</label>
+        <form class="scrape-form"
+              hx-post="/scrape"
+              hx-target="#kit-result"
+              hx-indicator="#loading"
+              hx-disabled-elt="find button">
+            <div class="input-wrap">
+                <span class="input-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                </span>
+                <input
+                        type="url"
+                        name="url"
+                        placeholder="https://www.detroitaxle.com/part/..."
+                        required
+                        autocomplete="off"
+                />
+            </div>
+            <button class="btn-primary" type="submit">
+                <span class="btn-text">Fetch Kit</span>
+                <span class="btn-arrow">→</span>
+            </button>
+        </form>
+    </div>
+
+    <div id="loading" class="htmx-indicator">
+        <div class="loader-inner">
+            <div class="spinner"></div>
+            <span>Scraping kit data</span>
+            <span class="loader-dots"><span>.</span><span>.</span><span>.</span></span>
+        </div>
+    </div>
+
+    <div id="kit-result"></div>
+
+</div>
+
+<footer class="made-by">
+    made with <span class="heart">♥</span> by <span class="author">Omar</span>
+</footer>
+
+</body>
+</html>
