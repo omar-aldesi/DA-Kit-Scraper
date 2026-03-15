@@ -1,0 +1,142 @@
+<!-- Kit summary -->
+<div class="kit-summary">
+    <div class="summary-card summary-card--main">
+        <div class="stat-label">Kit Price</div>
+        <div class="stat-value price">${{printf "%.2f" .Price}}</div>
+    </div>
+    <div class="summary-card">
+        <div class="stat-label">Undiscounted</div>
+        <div class="stat-value undiscounted">${{printf "%.2f" .UndiscountedPrice}}</div>
+    </div>
+    <div class="summary-card">
+        <div class="stat-label">Discount</div>
+        <div class="stat-value discount">{{.DiscountPercent}}%</div>
+        <div class="discount-bar">
+            <div class="discount-fill" style="width: {{.DiscountPercent}}%"></div>
+        </div>
+    </div>
+</div>
+
+<div class="section-header">
+    <div class="section-title">Parts List</div>
+    <div class="section-count">{{len .Parts}} items</div>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Component</th>
+            <th>Unit Price</th>
+            <th>Qty</th>
+            <th>Link</th>
+            <th>Return</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Parts}}
+        <tr>
+            <td class="mono muted">{{.Id}}</td>
+            <td class="name">{{.Name}}</td>
+            <td class="price">${{printf "%.2f" .Price}}</td>
+            <td class="mono center">{{.Quantity}}</td>
+            <td>
+                <a href="{{.URL}}" target="_blank" class="view-link">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    view
+                </a>
+            </td>
+            <td>
+                <div class="return-cell">
+                    <label class="toggle-pill">
+                        <input type="checkbox" id="toggle-{{.Id}}"
+                               onchange="handleToggle(this, {{.Id}}, {{.Quantity}})" />
+                        <span class="pill-track">
+                        <span class="pill-thumb"></span>
+                    </span>
+                        <span class="pill-label">Return</span>
+                    </label>
+
+                    <div id="qty-wrap-{{.Id}}" class="qty-wrap-animated">
+                        <button class="qty-btn" onclick="changeQty(this, {{.Id}}, -1, {{.Quantity}})">−</button>
+                        <span class="mono qty-num" id="qty-display-{{.Id}}">{{.Quantity}}</span>
+                        <button class="qty-btn" onclick="changeQty(this, {{.Id}}, 1, {{.Quantity}})">+</button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div id="return-panel" class="return-panel">
+    <div class="return-panel-left">
+        <span class="return-label">Est. Return Value</span>
+        <span class="return-sub">Based on selected parts & quantities</span>
+    </div>
+    <span class="return-amount">$0.00</span>
+</div>
+
+<script>
+    function handleToggle(checkbox, partId, maxQty) {
+        const qtyWrap = document.getElementById('qty-wrap-' + partId)
+        const display = document.getElementById('qty-display-' + partId)
+
+        if (checkbox.checked) {
+            qtyWrap.style.display = 'flex'
+            requestAnimationFrame(() => qtyWrap.classList.add('open'))
+            postPart(partId, 'add', parseInt(display.textContent))
+        } else {
+            qtyWrap.classList.remove('open')
+            qtyWrap.addEventListener('transitionend', () => {
+                qtyWrap.style.display = 'none'
+            }, { once: true })
+            postPart(partId, 'remove', parseInt(display.textContent))
+        }
+    }
+
+    function changeQty(btn, partId, delta, max) {
+        const display = document.getElementById('qty-display-' + partId)
+        const current = parseInt(display.textContent)
+        const next = Math.min(Math.max(current + delta, 1), max)
+        if (next === current) return
+        display.textContent = next
+        const action = delta > 0 ? 'add' : 'remove'
+        postPart(partId, action, 1)
+    }
+
+    function postPart(partId, action, qty) {
+        htmx.ajax('POST', '/part', {
+            target: '#return-panel',
+            swap: 'innerHTML',
+            values: { part_id: String(partId), action, qty: String(qty) }
+        }).then(() => {
+            animateReturnPanel()
+        })
+    }
+
+    function animateReturnPanel() {
+        const panel = document.getElementById('return-panel')
+        if (!panel) return
+        panel.classList.add('flash')
+        setTimeout(() => panel.classList.remove('flash'), 400)
+
+        const amountEl = panel.querySelector('.return-amount')
+        if (!amountEl) return
+        const target = parseFloat(amountEl.textContent.replace('$', ''))
+        const from = panel._displayedAmount ?? 0
+        panel._displayedAmount = target
+        const duration = 400
+        const start = performance.now()
+
+        function tick(now) {
+            const progress = Math.min((now - start) / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            amountEl.textContent = '$' + (from + (target - from) * eased).toFixed(2)
+            if (progress < 1) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+    }
+</script>
